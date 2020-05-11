@@ -10,6 +10,41 @@ source(here::here('zotero_api_keys.r'))
 #user_id = 
 #user_api_key = 
 
+# items(collection_id = NULL, params, collection = NULL, top = FALSE)
+# item(<item_id>, <params>)
+# children(<item_id>, <params>)
+# file()
+
+
+# POC: get article records with formatted citations and country tags for evidence map
+# ###################################################################################
+
+r <- GET(
+  url = paste(api_base_url, 'users', user_id, 'collections/R7E2F4UJ/items/top', sep = '/'), 
+  query = list(
+    #tag = "research_roundup", 
+    format = "json", include='data,bib,citation', style = 'apa'),
+  add_headers(
+    'Zotero-API-Version' = 3,
+    'Zotero-API-Key' = user_api_key))
+
+records <- fromJSON(content(r, as = 'text', encoding = 'utf-8'))
+records %>% glimpse()
+
+records_countrystudies <- records$data %>%
+  unnest(cols = c(tags)) %>%
+  filter(tag %in% codelist$iso3c)
+
+records_countrystudies %>% select(key, tag) %>%
+  left_join(
+    records %>%
+      filter(key %in% records_countrystudies$key) %>%
+      select(key, bib)
+)
+
+
+
+
 # https://www.zotero.org/mhermans/collections/R7E2F4UJ/items/II2AUIT5/collection
 
 r_url <- paste(api_base_url, 'users', user_id, 'collections', sep = '/')
@@ -31,7 +66,7 @@ r <- GET(
     'Zotero-API-Key' = user_api_key)
   #,
   # query = list(tag = "research_roundup", format = "bib", style = 'apa') # return only a formatted citation
-  # query = list(tag = "research_roundup", format = "json", include='data,bib,citation', style = 'apa') # return only a formatted citation
+  # query = list(tag = "research_roundup", format = "json", include='data,bib,citation', style = 'apa')
 )
 r
 
